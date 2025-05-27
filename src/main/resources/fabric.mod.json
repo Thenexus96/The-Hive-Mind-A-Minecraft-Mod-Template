@@ -3,20 +3,23 @@
 	"id": "hivemind-template-mod",
 	"version": "${version}",
 	"name": "Hivemind Template Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "This is a Mod for my testing... The True HiveMind will be revealed later!",
 	"authors": [
-		"Me!"
+		"Sanfonic1!"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/hivemind-template-mod/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
 			"net.sanfonic.hivemind.HivemindTemplateMod"
+		],
+		"client": [
+			"net.sanfonic.hivemind.HivemindTemplateModClient"
 		],
 		"fabric-datagen": [
 			"net.sanfonic.hivemind.HivemindTemplateModDataGenerator"
