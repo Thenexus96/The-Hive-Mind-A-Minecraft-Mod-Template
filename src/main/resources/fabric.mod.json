@@ -4,15 +4,12 @@
 	"version": "${version}",
 	"name": "Hivemind Template Mod",
 	"description": "This is a Mod for my testing... The True HiveMind will be revealed later!",
-	"authors": [
-		"Sanfonic1!"
-	],
+	"authors": ["Sanfonic1!"],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Thenexus96/The-Hive-Mind-A-Minecraft-Mod-Template"
 	},
 	"license": "MIT",
-	"icon": "assets/hivemind-template-mod/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -29,12 +26,9 @@
 		"hivemind-template-mod.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.16.14",
+		"fabricloader": ">=0.14.21",
 		"minecraft": "~1.20.1",
 		"java": ">=17",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

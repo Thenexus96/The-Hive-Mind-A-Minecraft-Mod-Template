@@ -1,17 +1,41 @@
 package net.sanfonic.hivemind;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.mob.PathAwareEntity;
+import net.minecraft.util.Identifier;
+import net.minecraft.registry.Registry;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.entity.EntityDimensions;
+
+import net.sanfonic.hivemind.golems.CombatGolem;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HivemindTemplateMod implements ModInitializer {
 	public static final String MOD_ID = "hivemind-template-mod";
-
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	//Register entity
+	public static final EntityType<CombatGolem> COMBAT_GOLEM = Registry.register(
+			Registry.ENTITY_TYPE,
+			new Identifier(MOD_ID, "combat_golem"),
+			FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, CombatGolem::new)
+					.dimensions(EntityDimensions.fixed(0.75f, 1.75f))
+					.build()
+	);
+
+	// Register spawn egg
+	public static final Item COMBAT_GOLEM_SPAWN_EGG = Registry.register(
+			Registry.ITEM,
+			new Identifier(MOD_ID, "combat_golem_spawn_egg"),
+			new SpawnEggItem(COMBAT_GOLEM, 0x8B0000, 0xFFD700, new Item.Settings().group(ItemGroup.MISC))
+	);
 
 	@Override
 	public void onInitialize() {
@@ -19,6 +43,9 @@ public class HivemindTemplateMod implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		LOGGER.info("HiveMind Mod initializing!");
+
+		// Future Logic Goes Here
+
 	}
 }
