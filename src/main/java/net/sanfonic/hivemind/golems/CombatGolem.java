@@ -36,19 +36,19 @@ public class CombatGolem extends PathAwareEntity {
     }
 
     @Override
-    protected boolean damage(DamageSource source, float amount) {
+    public boolean damage(DamageSource source, float amount) {
         return super.damage(source, amount);
     }
 
     @Override
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
-        if (!world.isClient) {
+        if (!this.getWorld().isClient) {
             player.sendMessage(Text.of("You interacted with the Combat Golem!"), false);
         }
         return ActionResult.SUCCESS;
     }
     @Override
-    protected EntityDimensions getDimensions(EntityPose pose) {
-        return super.getDimensions(pose); // Use default dimensions from type
+    public EntityDimensions getDimensions(EntityPose pose) {
+        return EntityDimensions.fixed(0.75f, 1.75f); // Use default dimensions from type
     }
 }
