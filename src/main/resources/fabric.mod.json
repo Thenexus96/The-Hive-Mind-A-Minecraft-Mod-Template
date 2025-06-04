@@ -3,20 +3,20 @@
 	"id": "hivemind-template-mod",
 	"version": "${version}",
 	"name": "Hivemind Template Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
-	"authors": [
-		"Me!"
-	],
+	"description": "This is a Mod for my testing... The True HiveMind will be revealed later!",
+	"authors": ["Sanfonic1!"],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Thenexus96/The-Hive-Mind-A-Minecraft-Mod-Template"
 	},
-	"license": "CC0-1.0",
-	"icon": "assets/hivemind-template-mod/icon.png",
+	"license": "MIT",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
 			"net.sanfonic.hivemind.HivemindTemplateMod"
+		],
+		"client": [
+			"net.sanfonic.hivemind.HivemindTemplateModClient"
 		],
 		"fabric-datagen": [
 			"net.sanfonic.hivemind.HivemindTemplateModDataGenerator"
@@ -26,12 +26,9 @@
 		"hivemind-template-mod.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.16.14",
+		"fabricloader": ">=0.14.21",
 		"minecraft": "~1.20.1",
 		"java": ">=17",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
