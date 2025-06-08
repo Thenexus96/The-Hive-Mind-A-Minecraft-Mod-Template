@@ -3,6 +3,7 @@ package net.sanfonic.hivemind;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.PathAwareEntity;
@@ -17,6 +18,7 @@ import net.minecraft.entity.EntityDimensions;
 
 import net.sanfonic.hivemind.golems.CombatGolem;
 import net.sanfonic.hivemind.entity.ModEntities;
+import net.sanfonic.hivemind.item.ModItems;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +49,8 @@ public class HivemindTemplateMod implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-			MobEntities.register();
+			ModEntities.register();
+			ModItems.register();
 
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS).register(entries -> {
 			entries.add(COMBAT_GOLEM_SPAWN_EGG);
