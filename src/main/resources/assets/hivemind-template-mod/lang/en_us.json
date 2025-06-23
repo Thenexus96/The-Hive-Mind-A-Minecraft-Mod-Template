@@ -1,4 +1,7 @@
 {
+  "item.hivemind-template-mod.hive_core": "Hive Core",
   "item.hivemind-template-mod.combat_golem_spawn_egg": "Combat Golem Spawn Egg",
-  "entity.hivemind-template-mod.combat_golem": "Combat Golem"
+  "entity.hivemind-template-mod.combat_golem": "Combat Golem",
+  "advancement.hivemind.join.title": "Welcome to the HiveMind",
+  "advancement.hivemind.join.description": "You are now linked with your golems."
 }
