@@ -11,23 +11,24 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.item.Item;
 
-import net.sanfonic.hivemind.golems.CombatGolem;
+import net.sanfonic.hivemind.command.HiveMindCommands;
+import net.sanfonic.hivemind.entity.DroneEntity;
 import net.sanfonic.hivemind.entity.ModEntities;
 import net.sanfonic.hivemind.item.ModItems;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HivemindTemplateMod implements ModInitializer {
-	public static final String MOD_ID = "hivemind-template-mod";
+public class Hivemind implements ModInitializer {
+	public static final String MOD_ID = "hivemind";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 
 	// Register spawn egg
-	public static final Item COMBAT_GOLEM_SPAWN_EGG = Registry.register(
+	public static final Item DRONE_SPAWN_EGG = Registry.register(
 			Registries.ITEM,
-			new Identifier(MOD_ID, "combat_golem_spawn_egg"),
-			new SpawnEggItem(ModEntities.COMBAT_GOLEM, 0x8B0000, 0xFFD700, new Item.Settings())
+			new Identifier(MOD_ID, "drone_spawn_egg"),
+			new SpawnEggItem(ModEntities.DRONE, 0x8B0000, 0xFFD700, new Item.Settings())
 	);
 
 	@Override
@@ -38,13 +39,14 @@ public class HivemindTemplateMod implements ModInitializer {
 
 		ModEntities.register();
 		ModItems.register();
+		HiveMindCommands.register();
 
 		//Register attributes AFTER entities are registered
-		FabricDefaultAttributeRegistry.register(ModEntities.COMBAT_GOLEM, CombatGolem.createMobAttributes());
+		FabricDefaultAttributeRegistry.register(ModEntities.DRONE, DroneEntity.createMobAttributes());
 
-		//Add Spawn Egg ti creative inventroy
+		//Add Spawn Egg ti creative inventory
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS).register(entries -> {
-			entries.add(COMBAT_GOLEM_SPAWN_EGG);
+			entries.add(DRONE_SPAWN_EGG);
 		});
 
 		LOGGER.info("HiveMind Mod initializing!");

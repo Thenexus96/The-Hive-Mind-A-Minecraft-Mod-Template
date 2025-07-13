@@ -7,17 +7,17 @@ import net.minecraft.client.render.entity.EntityRendererFactory;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.util.Identifier;
-import net.sanfonic.hivemind.HivemindTemplateMod;
-import net.sanfonic.hivemind.golems.CombatGolem;
+import net.sanfonic.hivemind.Hivemind;
+import net.sanfonic.hivemind.entity.DroneEntity;
 
 @Environment(EnvType.CLIENT)
-public class CombatGolemRenderer extends MobEntityRenderer<CombatGolem, BipedEntityModel<CombatGolem>> {
-    public CombatGolemRenderer(EntityRendererFactory.Context context) {
+public class DroneRenderer extends MobEntityRenderer<DroneEntity, BipedEntityModel<DroneEntity>> {
+    public DroneRenderer(EntityRendererFactory.Context context) {
         super(context, new BipedEntityModel<>(context.getPart(EntityModelLayers.PLAYER)), 0.5f);
     }
 
     @Override
-    public Identifier getTexture(CombatGolem entity) {
-        return new Identifier(HivemindTemplateMod.MOD_ID, "textures/entity/combat_golem.png");
+    public Identifier getTexture(DroneEntity entity) {
+        return new Identifier(Hivemind.MOD_ID, "textures/entity/drone.png");
     }
 }
