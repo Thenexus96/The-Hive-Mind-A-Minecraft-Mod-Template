@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"id": "hivemind-template-mod",
 	"version": "${version}",
-	"name": "Hivemind Template Mod",
+	"name": "The Hivemind",
 	"description": "This is a Mod for my testing... The True HiveMind will be revealed later!",
 	"authors": ["Sanfonic1!"],
 	"contact": {
@@ -13,17 +13,17 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.sanfonic.hivemind.HivemindTemplateMod"
+			"net.sanfonic.hivemind.Hivemind"
 		],
 		"client": [
-			"net.sanfonic.hivemind.HivemindTemplateModClient"
+			"net.sanfonic.hivemind.HivemindClient"
 		],
 		"fabric-datagen": [
-			"net.sanfonic.hivemind.HivemindTemplateModDataGenerator"
+			"net.sanfonic.hivemind.HivemindDataGenerator"
 		]
 	},
 	"mixins": [
-		"hivemind-template-mod.mixins.json"
+      "hivemind.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.21",

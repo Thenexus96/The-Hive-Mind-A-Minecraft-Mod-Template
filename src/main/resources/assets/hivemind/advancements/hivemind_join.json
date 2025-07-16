@@ -1,0 +1,27 @@
+{
+  "display": {
+    "icon": {
+      "item": "hivemind:hive_mind_access"
+    },
+    "title": {
+      "translate": "advancement.hivemind.join.title"
+    },
+    "description": {
+      "translate": "advancement.hivemind.join.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "used_hivemind_item": {
+      "trigger": "minecraft:consume_item",
+      "conditions": {
+        "item": {
+          "item": "hivemind:hive_mind_access"
+        }
+      }
+    }
+  }
+}
