@@ -3,7 +3,7 @@
 	"package": "net.sanfonic.hivemind.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+		"HiveMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

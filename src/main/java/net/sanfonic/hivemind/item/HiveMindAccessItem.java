@@ -25,9 +25,9 @@ public class HiveMindAccessItem extends Item {
 
         if (!world.isClient) {
             //Example: Tag player as part of the HiveMind
-            HiveMindData.setHasAccess(player, true);
+            //HiveMindData.setHasAccess(player, true);
 
-            //Trigger Advancement (custom advancement JSON nneeded in datapack
+            //Trigger Advancement (custom advancement JSON needed in datapack
             MinecraftServer server = player.getServer();
             if (server != null) {
                 Advancement advancement = server.getAdvancementLoader().get(new Identifier("yourmodid:hivemind_join"));
