@@ -19,7 +19,7 @@ public class ModEntities {
             FabricEntityTypeBuilder.createMob()
                     .entityFactory(DroneEntity::new)
                     .spawnGroup(SpawnGroup.CREATURE)
-                    .dimensions(EntityDimensions.fixed(0.6f, 1.8F))
+                    .dimensions(EntityDimensions.fixed(0.8f, 2.0F))
                     .build()
     );
 

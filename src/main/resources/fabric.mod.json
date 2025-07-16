@@ -23,7 +23,7 @@
 		]
 	},
 	"mixins": [
-		"hivemind-template-mod.mixins.json"
+      "hivemind.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.21",

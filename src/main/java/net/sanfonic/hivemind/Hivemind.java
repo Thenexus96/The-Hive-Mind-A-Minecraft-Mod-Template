@@ -44,7 +44,7 @@ public class Hivemind implements ModInitializer {
 		//Register attributes AFTER entities are registered
 		FabricDefaultAttributeRegistry.register(ModEntities.DRONE, DroneEntity.createMobAttributes());
 
-		//Add Spawn Egg ti creative inventory
+		//Add Spawn Egg to creative inventory
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS).register(entries -> {
 			entries.add(DRONE_SPAWN_EGG);
 		});

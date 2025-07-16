@@ -24,7 +24,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 
 import net.sanfonic.hivemind.entity.custom.goal.FollowHiveMindPlayerGoal;
+import net.sanfonic.hivemind.config.ModConfig;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class DroneEntity extends PathAwareEntity {
@@ -33,10 +35,14 @@ public class DroneEntity extends PathAwareEntity {
 
     private UUID hiveMindOwnerUuid;
 
+    // Add these fields to prevent console spam
+    private UUID previousOwnerUuid = null;
+    private long lastLogTime = 0;
+
     // Constructor
     public DroneEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
-        System.out.println("[DEBUG] DroneEntity created");
+        System.out.println("DroneEntity created");
     }
 
     //FIXED: Method name matches what's called in ModEntites
@@ -46,6 +52,22 @@ public class DroneEntity extends PathAwareEntity {
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25)
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 6.0)
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 16.0); // Added for better AI
+    }
+
+    // Method to set the hivemind owner (called by the command)
+    public void setHiveMindOwnerUuid(PlayerEntity player) {
+        this.hiveMindOwnerUuid = player.getUuid();
+
+        // Only log when the link status actually changes
+        if (!Objects.equals(this.hiveMindOwnerUuid, player.getUuid())) {
+            this.hiveMindOwnerUuid = player.getUuid();
+            ModConfig.getInstance().droneLinkDebugLog("Drone linked to player: " + player.getName().getString());
+        }
+    }
+
+    // Method to check if this drone has a hivemind owner
+    public boolean hasHiveMindOwner() {
+        return this.hiveMindOwnerUuid != null;
     }
 
     public PlayerEntity getHiveMindOwner() {
@@ -60,9 +82,11 @@ public class DroneEntity extends PathAwareEntity {
         return null;
     }
 
-    public void setHiveMindOwnerUuid(PlayerEntity player) {
-        this.hiveMindOwnerUuid = player.getUuid();
-    }
+    // Method to get the actual player object (if they're online, Alternative method that takes a world parameter
+        public PlayerEntity getHiveMindOwner (World world) {
+            if (this.hiveMindOwnerUuid == null) return null;
+            return world.getPlayerByUuid(this.hiveMindOwnerUuid);
+        }
 
     @Override
     protected void initGoals() {
@@ -120,8 +144,21 @@ public class DroneEntity extends PathAwareEntity {
     public void tick() {
         super.tick();
         if (this.getWorld().isClient) return;
+
+        // Fixed Only log periodically and when status changes, not every tick
         if (this.hiveMindOwnerUuid != null) {
-            System.out.println("Drone is linked to: " + this.hiveMindOwnerUuid);
+            ModConfig config = ModConfig.getInstance();
+
+               // Only log if drone linking debug is enabled AND (owner changed OR enough time has passed)
+                if (config.isDroneLinkingDebugEnabled() &&
+                        (!Objects.equals(this.previousOwnerUuid, this.hiveMindOwnerUuid) ||
+                                (System.currentTimeMillis() - this.lastLogTime > config.getLogCooldownMillis()))) {
+
+                    config.droneLinkDebugLog("Drone is linked to: " + this.hiveMindOwnerUuid);
+                    this.previousOwnerUuid = this.hiveMindOwnerUuid;
+                    this.lastLogTime = System.currentTimeMillis();
+                }
+            }
         }
+        // Add your other tick logic here if needed
     }
-}

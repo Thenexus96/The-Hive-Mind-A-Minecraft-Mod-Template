@@ -18,6 +18,6 @@ public class DroneRenderer extends MobEntityRenderer<DroneEntity, BipedEntityMod
 
     @Override
     public Identifier getTexture(DroneEntity entity) {
-        return new Identifier(Hivemind.MOD_ID, "textures/entity/drone.png");
+        return new Identifier("hivemind", "textures/entity/drone.png");
     }
 }
