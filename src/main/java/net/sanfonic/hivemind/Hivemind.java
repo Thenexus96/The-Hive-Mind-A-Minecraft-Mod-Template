@@ -12,8 +12,10 @@ import net.minecraft.registry.Registries;
 import net.minecraft.item.Item;
 
 import net.sanfonic.hivemind.command.HiveMindCommands;
+import net.sanfonic.hivemind.data.HiveMindData.HiveMindServerEvents;
 import net.sanfonic.hivemind.entity.DroneEntity;
 import net.sanfonic.hivemind.entity.ModEntities;
+import net.sanfonic.hivemind.item.ModItemGroups;
 import net.sanfonic.hivemind.item.ModItems;
 
 import org.slf4j.Logger;
@@ -38,8 +40,10 @@ public class Hivemind implements ModInitializer {
 		// Proceed with mild caution.
 
 		ModEntities.register();
-		ModItems.register();
+		ModItemGroups.registerItemGroups();
+		ModItems.registerModItems();
 		HiveMindCommands.register();
+		HiveMindServerEvents.register();
 
 		//Register attributes AFTER entities are registered
 		FabricDefaultAttributeRegistry.register(ModEntities.DRONE, DroneEntity.createMobAttributes());

@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "hivemind-template-mod",
+	"id": "hivemind",
 	"version": "${version}",
 	"name": "The Hivemind",
 	"description": "This is a Mod for my testing... The True HiveMind will be revealed later!",
