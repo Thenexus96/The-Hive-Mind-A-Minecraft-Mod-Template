@@ -1,7 +1,8 @@
 {
   "item.hivemind.hive_core": "Hive Core",
   "item.hivemind.drone_spawn_egg": "Drone Spawn Egg",
+  "itemgoup.hivemind": "HiveMind Group",
   "entity.hivemind.drone": "Drone",
   "advancement.hivemind.join.title": "Welcome to the HiveMind",
-  "advancement.hivemind.join.description": "You are now linked with your golems."
+  "advancement.hivemind.join.description": "You are now linked with your Drones."
 }
