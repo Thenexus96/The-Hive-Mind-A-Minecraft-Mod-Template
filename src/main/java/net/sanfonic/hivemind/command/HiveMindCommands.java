@@ -155,7 +155,7 @@ public class HiveMindCommands {
                                 for (Entity entity : allEntities) {
                                     if (entity instanceof DroneEntity drone) {
                                         if (drone.hasHiveMindOwner()) {
-                                            PlayerEntity owner = drone.getHiveMindOwner();
+                                            PlayerEntity owner = drone.getHiveMindOwnerPlayer();
                                             if (owner != null && owner.getUuid().equals(player.getUuid())) {
                                                 connectedDrones.add(drone);
                                             }

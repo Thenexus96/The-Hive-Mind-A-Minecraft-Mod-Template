@@ -1,23 +1,35 @@
 package net.sanfonic.hivemind.item;
 
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.item.ItemGroups;
 import net.sanfonic.hivemind.Hivemind;
 
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Rarity;
 
 public class ModItems {
     //public static final Item HIVE_MIND_ACCESS = registerItem("hive_mind_access",
             //new HiveMindAccessItem(new FabricItemSettings().maxCount(1).rarity(Rarity.RARE)));
 
-    public static final Item HIVE_CORE = new Item(new Item.Settings());
+    public static final Item HIVE_CORE = registerItem("hive_core", new Item(new FabricItemSettings()));
 
-    public static void register() {
+    private static void addItemsToIngredientItemGroup(FabricItemGroupEntries entries) {
+        entries.add(HIVE_CORE);
+    }
+
+    public static Item registerItem(String name, Item item) {
+        return Registry.register(Registries.ITEM, new Identifier(Hivemind.MOD_ID, name), item);
+    }
+
+
+    public static void registerModItems() {
         //FIXED: Use Consistent MOD_ID
-        Registry.register(Registries.ITEM, new Identifier(Hivemind.MOD_ID, "hive_core"), HIVE_CORE);
         Hivemind.LOGGER.info("ModItems Registered for" + Hivemind.MOD_ID);
+
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(ModItems::addItemsToIngredientItemGroup);
     }
 }
