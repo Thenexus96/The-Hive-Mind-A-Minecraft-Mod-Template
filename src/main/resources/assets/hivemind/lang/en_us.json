@@ -1,8 +1,29 @@
 {
-  "item.hivemind.hive_core": "Hive Core",
+  "category.hivemind.general": "HiveMind",
+
+  "key.hivemind.open_gui": "Open Hivemind GUI",
+  "key.hivemind.quick_access": "Quick Access",
+  "key.hivemind.toggle_mode": "Toggle Mod",
+
+  "gui.hivemind.config.title": "HiveMind Settings",
+  "gui.hivemind.config.keybinds": "Key Bindings",
+  "gui.hivemind.config.reset_defaults": "Reset to Defaults",
+  "gui.hivemind.config.press_key": "> Press Key <",
+  "gui.hivemind.config.press_key_instruction": "Press a key to bind, or ESC to clear",
+  "gui.hivemind.main.title": "HiveMind",
+  "gui.hivemind.main.welcome": "Welcome to HiveMind!",
+  "gui.hivemind.main.settings": "Settings",
+
+  "item.hivemind.hive_material": "Hive Material",
   "item.hivemind.drone_spawn_egg": "Drone Spawn Egg",
-  "itemgoup.hivemind": "HiveMind Group",
+
+  "block.hivemind.hive_material_block": "Hive Material (Block)",
+  "block.hivemind.hive_core": "Hive Core",
+
   "entity.hivemind.drone": "Drone",
+
   "advancement.hivemind.join.title": "Welcome to the HiveMind",
-  "advancement.hivemind.join.description": "You are now linked with your Drones."
+  "advancement.hivemind.join.description": "You are now linked with your Drones.",
+
+  "itemgoup.hivemind": "HiveMind Group"
 }

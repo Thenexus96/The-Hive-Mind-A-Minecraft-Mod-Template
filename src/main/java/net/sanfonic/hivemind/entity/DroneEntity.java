@@ -2,11 +2,13 @@ package net.sanfonic.hivemind.entity;
 
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.goal.*;
+import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -42,6 +44,9 @@ public class DroneEntity extends PathAwareEntity {
             DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.STRING);
     private DroneRole currentRole = DroneRole.IDLE;
     private DroneRoleBehavior roleBehavior = RoleRegistry.getBehavior(DroneRole.IDLE);
+    private boolean aiControlPaused = false;
+    private GoalSelector savedGoals;
+    private GoalSelector savedTargetGoals;
 
     private UUID hiveMindOwnerUuid;
 
@@ -102,6 +107,87 @@ public class DroneEntity extends PathAwareEntity {
         }
 
         return null;
+    }
+
+    // Pause AI control when player takes over
+    public void pauseAIControl() {
+        if (!aiControlPaused) {
+            this.aiControlPaused = true;
+
+            // Create new goal selectors to save current goals
+            this.savedGoals = new GoalSelector(() -> this.getWorld().getProfiler());
+            this.savedTargetGoals = new GoalSelector(() ->this.getWorld().getProfiler()); // Save current goals
+            this.savedGoals = new GoalSelector(() -> this.getWorld().getProfiler());
+            this.savedTargetGoals = new GoalSelector(() -> this.getWorld().getProfiler());
+
+            // In Fabric, we need to use reflection or a different approach to copy goals
+            // For now, we'll just clear the goals and rely on resumeAIControl to re-add them
+
+            // Clear current goals to stop AI
+            this.goalSelector.getGoals().clear();
+            this.targetSelector.getGoals().clear();
+
+            // Stop current movement
+            this.getNavigation().stop();
+            this.setVelocity(this.getVelocity().multiply(0.8, 0.8, 0.8));
+        }
+    }
+
+    // Resume AI control when player releases control
+    public void resumeAIControl() {
+        if (aiControlPaused) {
+            this.aiControlPaused = false;
+
+            // Re-register AI goals
+            initGoals();
+
+            // Clear saved goals
+            this.savedGoals = null;
+            this.savedTargetGoals = null;
+        }
+    }
+
+    // Override this method to re-register your drone's AI goals
+    // This should contain the same goals you originally registered
+    //@Override
+    //protected void initGoals() {
+        // Example AI Goals - replace this with your actual drone AI
+        // this.goalSelector.add(1, new SwimGoal(this));
+        // this.goalSelector.add(2, new DronePatrolGoal(this));
+        // this.goalSelector.add(3, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
+        // this.goalSelector.add(4, new LookAroundGoal(this));
+
+        // this.targetSelector.add(1, new RevengeGoal(this));
+        // this.targetSelector.add(2, new ActiveTargetGoal<>(this, HostileEntity.class, true));
+    //}
+
+    public boolean isAiControlPaused() {
+        return aiControlPaused;
+    }
+
+    // Get the drone's flight speed for player control
+    public float getFlySpeed() {
+        return 0.2f; // Adjust based on your drone's characteristics
+    }
+
+    // Primary ability triggered by player
+    public void triggerPrimaryAbility() {
+        // Implement drone's primary ability (e.g., scanner, weapon, tool)
+        // This could be mining, attacking, scanning, etc.
+
+        // Example: Play sound effect
+        // this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+        //     SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+    }
+
+    // Secondary ability triggered by player
+    public void triggerSecondaryAbility() {
+        // Implement drone's secondary ability
+        // This could be a different tool or utility function
+
+        // Example: Heal nearby entities
+        // this.getWorld().getEntitiesByClass(LivingEntity.class, this.getBoundingBox().expand(5.0), null)
+        //     .forEach(entity -> entity.heal(2.0F));
     }
 
     // Method to get the actual player object (if they're online, Alternative method that takes a world parameter
@@ -417,6 +503,12 @@ public class DroneEntity extends PathAwareEntity {
         super.tick();
         if (this.getWorld().isClient) return;
 
+        // Only run AI Logic if not player controlled
+        if (!aiControlPaused) {
+            // Your existing AI Tick logic
+            runAITick();
+        }
+
         // Handle visual effects on client side
         if (this.getWorld().isClient) {
             handleClientVisualEffects();
@@ -442,10 +534,35 @@ public class DroneEntity extends PathAwareEntity {
         if (this.roleBehavior != null) {
             this.roleBehavior.tick(this);
         }
-
-        // Add your other tick logic here if needed
-
     }
+
+    public void runAITick() {
+        // Move your existing AI logic here
+        // This separates AI behavior from player-controlled behavior
+    }
+
+    // Override to prevent AI movement when player controlled
+    @Override
+    protected void mobTick() {
+        if (!aiControlPaused) {
+            super.mobTick();
+        } else {
+            // Minimal stepping for player-controlled drones
+            this.updateWaterState();
+        }
+    }
+
+    // Fabric-specific: Override canBreaththeUnderwater for flying drones
+    @Override
+    public boolean canBreatheInWater() {
+        return true; // Drones don't need air
+    }
+
+    // Fabric-specific: Make drones immune to fall damage : I am going to ignore this for now as they need to act like players
+    //@Override
+    //public boolean handleFallDamage(float fallDistance, float multiplier, net.minecraft.entity.damage.DamageSource damageSource) {
+    //    return false; // Drones don't take fall damage
+    //}
 
     // Handles client-side visual effects for linked drones
     private void handleClientVisualEffects() {

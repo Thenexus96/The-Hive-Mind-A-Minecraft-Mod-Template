@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "hivemind:hive_material_block"
+    }
+  ],
+  "result": {
+    "item": "hivemind:hive_material",
+    "count": 9
+  }
+}
