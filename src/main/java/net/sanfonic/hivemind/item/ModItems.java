@@ -15,10 +15,10 @@ public class ModItems {
     //public static final Item HIVE_MIND_ACCESS = registerItem("hive_mind_access",
             //new HiveMindAccessItem(new FabricItemSettings().maxCount(1).rarity(Rarity.RARE)));
 
-    public static final Item HIVE_CORE = registerItem("hive_core", new Item(new FabricItemSettings()));
+    public static final Item HIVE_MATERIAL = registerItem("hive_material", new Item(new FabricItemSettings()));
 
     private static void addItemsToIngredientItemGroup(FabricItemGroupEntries entries) {
-        entries.add(HIVE_CORE);
+        entries.add(HIVE_MATERIAL);
     }
 
     public static Item registerItem(String name, Item item) {
