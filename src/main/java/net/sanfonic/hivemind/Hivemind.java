@@ -11,7 +11,9 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.item.Item;
 
-import net.sanfonic.hivemind.command.HiveMindCommands;
+import net.sanfonic.hivemind.block.ModBlock;
+import net.sanfonic.hivemind.commands.DroneControlCommands;
+import net.sanfonic.hivemind.commands.HiveMindCommands;
 import net.sanfonic.hivemind.data.HiveMindData.HiveMindServerEvents;
 import net.sanfonic.hivemind.entity.DroneEntity;
 import net.sanfonic.hivemind.entity.ModEntities;
@@ -39,10 +41,12 @@ public class Hivemind implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		ModEntities.register();
 		ModItemGroups.registerItemGroups();
+		ModEntities.register();
 		ModItems.registerModItems();
+		ModBlock.registerModBlocks();
 		HiveMindCommands.register();
+		DroneControlCommands.init();
 		HiveMindServerEvents.register();
 
 		//Register attributes AFTER entities are registered

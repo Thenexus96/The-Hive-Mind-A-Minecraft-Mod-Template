@@ -16,7 +16,8 @@
 			"net.sanfonic.hivemind.Hivemind"
 		],
 		"client": [
-			"net.sanfonic.hivemind.HivemindClient"
+			"net.sanfonic.hivemind.HivemindClient",
+			"net.sanfonic.hivemind.client.ClientDroneController"
 		],
 		"fabric-datagen": [
 			"net.sanfonic.hivemind.HivemindDataGenerator"

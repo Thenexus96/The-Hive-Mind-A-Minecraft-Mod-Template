@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "hivemind:hive_material"
+    }
+  },
+  "result": {
+    "item": "hivemind:hive_material_block"
+  }
+}
