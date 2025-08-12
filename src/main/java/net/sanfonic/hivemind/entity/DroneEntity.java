@@ -47,6 +47,10 @@ public class DroneEntity extends PathAwareEntity {
     private boolean aiControlPaused = false;
     private GoalSelector savedGoals;
     private GoalSelector savedTargetGoals;
+    private static final TrackedData<Float> DRONE_YAW =
+            DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.FLOAT);
+    private static final TrackedData<Float> DRONE_PITCH =
+            DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
     private UUID hiveMindOwnerUuid;
 
@@ -423,7 +427,57 @@ public class DroneEntity extends PathAwareEntity {
         super.initDataTracker();
         this.dataTracker.startTracking(IS_LINKED, false);
         this.dataTracker.startTracking(OWNER_NAME, "");
+        this.dataTracker.startTracking(DRONE_YAW, 0.0f);
+        this.dataTracker.startTracking(DRONE_PITCH, 0.0f);
         // No additional data to track
+    }
+
+    // Override setYaw to sync to clients
+    @Override
+    public void setYaw(float yaw) {
+        super.setYaw(yaw);
+
+        // Force update head yaw as well for proper camera rotation
+        this.setHeadYaw(yaw);
+        this.bodyYaw = yaw;
+        this.prevYaw = yaw;
+
+        if (!this.getWorld().isClient) {
+            this.dataTracker.set(DRONE_YAW, yaw);
+        }
+    }
+
+    // Override setPitch to sync to clients
+    @Override
+    public void setPitch(float pitch) {
+        super.setPitch(pitch);
+
+        // Ensure previous pitch is also updated
+        this.prevPitch = pitch;
+
+        if (!this.getWorld().isClient) {
+            this.dataTracker.set(DRONE_PITCH, pitch);
+        }
+    }
+
+    // Client-side: Apply synced rotation
+    @Override
+    public void onTrackedDataSet(TrackedData<?> data) {
+        super.onTrackedDataSet(data);
+
+        if (this.getWorld().isClient) {
+            if (data.equals(DRONE_YAW)) {
+                float syncedYaw = this.dataTracker.get(DRONE_YAW);
+                this.setYaw(syncedYaw);
+                this.setHeadYaw(syncedYaw);
+                this.bodyYaw = syncedYaw;
+                this.prevYaw = syncedYaw;
+            } else if (data.equals(DRONE_PITCH)) {
+                float syncedPitch = this.dataTracker.get(DRONE_PITCH);
+                this.setPitch(syncedPitch);
+                this.prevPitch = syncedPitch;
+            }
+        }
     }
 
     @Override
@@ -501,13 +555,6 @@ public class DroneEntity extends PathAwareEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.getWorld().isClient) return;
-
-        // Only run AI Logic if not player controlled
-        if (!aiControlPaused) {
-            // Your existing AI Tick logic
-            runAITick();
-        }
 
         // Handle visual effects on client side
         if (this.getWorld().isClient) {
@@ -515,7 +562,22 @@ public class DroneEntity extends PathAwareEntity {
             return;
         }
 
-        // Server-side logic
+        if (this.getWorld().isClient && aiControlPaused) {
+            // Ensure all rotation values are synchronized
+            float currentYaw = this.getYaw();
+            float currentPitch = this.getPitch();
+
+            this.setHeadYaw(currentYaw);
+            this.bodyYaw = currentYaw;
+        }
+
+        // Server-side logic only below this point
+        // Only run AI Logic if not player controlled
+        if (!aiControlPaused) {
+            // Your existing AI Tick logic
+            runAITick();
+        }
+
         if (this.hiveMindOwnerUuid != null) {
             ModConfig config = ModConfig.getInstance();
 
@@ -533,6 +595,28 @@ public class DroneEntity extends PathAwareEntity {
         // Role Specific tick behavior
         if (this.roleBehavior != null) {
             this.roleBehavior.tick(this);
+        }
+    }
+
+    // Add a method to force rotation update (call this from your control input handler)
+    public void updateRotationFromInput(float yaw, float pitch) {
+        //Clamp pitch to reasonable values
+        pitch = net.minecraft.util.math.MathHelper.clamp(pitch, -90.0f, 90.0f);
+
+        // Set rotation on both client and server
+        this.setYaw(yaw);
+        this.setPitch(pitch);
+
+        // Force sync of all rotation values
+        this.setHeadYaw(yaw);
+        this.bodyYaw = yaw;
+        this.prevYaw = yaw;
+        this.prevPitch = pitch;
+
+        // Update tracked data for client sync
+        if (!this.getWorld().isClient) {
+            this.dataTracker.set(DRONE_YAW, yaw);
+            this.dataTracker.set(DRONE_PITCH, pitch);
         }
     }
 
