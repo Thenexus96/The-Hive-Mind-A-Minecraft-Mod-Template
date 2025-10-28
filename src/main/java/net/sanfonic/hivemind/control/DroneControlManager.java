@@ -58,6 +58,14 @@ public class DroneControlManager {
         return true;
     }
 
+    public static void updateDroneCamera(ServerPlayerEntity player) {
+        DroneEntity drone = getControlledDrone(player);
+        if (drone != null) {
+            // Force camera entity update
+            player.networkHandler.sendPacket(new SetCameraEntityS2CPacket(drone));
+        }
+    }
+
     public static void releaseControl(ServerPlayerEntity player) {
         UUID playerId = player.getUuid();
         DroneControlSession session = activeSessions.get(playerId);

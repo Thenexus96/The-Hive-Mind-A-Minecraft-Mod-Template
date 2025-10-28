@@ -12,6 +12,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.item.Item;
 
 import net.sanfonic.hivemind.block.ModBlock;
+import net.sanfonic.hivemind.client.DroneClientHandler;
 import net.sanfonic.hivemind.commands.DroneControlCommands;
 import net.sanfonic.hivemind.commands.HiveMindCommands;
 import net.sanfonic.hivemind.data.HiveMindData.HiveMindServerEvents;
