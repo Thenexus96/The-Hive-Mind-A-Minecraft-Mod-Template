@@ -1,5 +1,6 @@
 package net.sanfonic.hivemind.entity;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.ai.goal.GoalSelector;
@@ -26,6 +27,7 @@ import net.minecraft.world.World;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.Vec3d;
 
+import net.sanfonic.hivemind.client.DroneClientHandler;
 import net.sanfonic.hivemind.entity.custom.goal.FollowHiveMindPlayerGoal;
 import net.sanfonic.hivemind.config.ModConfig;
 import net.sanfonic.hivemind.data.HiveMindData.HiveMindDataManager;
@@ -52,7 +54,30 @@ public class DroneEntity extends PathAwareEntity {
     private static final TrackedData<Float> DRONE_PITCH =
             DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.FLOAT);
 
+    // Getters method for tracked data
+    public static TrackedData<Float> getDroneYawTracker() {
+        return DRONE_YAW;
+    }
+
+    public static TrackedData<Float> getDronePitchTracker() {
+        return DRONE_PITCH;
+    }
+
     private UUID hiveMindOwnerUuid;
+
+    private UUID controllingPlayerId = null;
+    public void setControllingPlayer(UUID playerId) {
+        this.controllingPlayerId = playerId;
+    }
+    public boolean isBeingControlled() {
+        return this.controllingPlayerId != null;
+    }
+    public UUID getControllingPlayerId() {
+        return this.controllingPlayerId;
+    }
+    public void clearControllingPlayer() {
+        this.controllingPlayerId = null;
+    }
 
     // Add these fields to prevent console spam
     private UUID previousOwnerUuid = null;
@@ -460,24 +485,79 @@ public class DroneEntity extends PathAwareEntity {
         }
     }
 
-    // Client-side: Apply synced rotation
+    // Client-side: Apply synced rotation ONLY if not locally controlled
     @Override
     public void onTrackedDataSet(TrackedData<?> data) {
         super.onTrackedDataSet(data);
 
-        if (this.getWorld().isClient) {
-            if (data.equals(DRONE_YAW)) {
-                float syncedYaw = this.dataTracker.get(DRONE_YAW);
-                this.setYaw(syncedYaw);
-                this.setHeadYaw(syncedYaw);
-                this.bodyYaw = syncedYaw;
-                this.prevYaw = syncedYaw;
-            } else if (data.equals(DRONE_PITCH)) {
-                float syncedPitch = this.dataTracker.get(DRONE_PITCH);
-                this.setPitch(syncedPitch);
-                this.prevPitch = syncedPitch;
+            if (this.getWorld().isClient) {
+                // Check if this drone is being controlled by the local player
+                boolean isLocallyControlled = false;
+
+                try {
+                    isLocallyControlled = net.sanfonic.hivemind.client.DroneClientHandler.isControllingDrone() &&
+                            DroneClientHandler.getControlledDrone() == this;
+                } catch (Exception e) {
+                // if client handler isn't available, assume not controlled
+                isLocallyControlled = false;
+            }
+
+            // Only apply server rotation if we're NOT locally controlling this drone
+            // This prevents the controlling client from having input overridden
+            if (!isLocallyControlled()) {
+                if (data.equals(DRONE_YAW)) {
+                    float syncedYaw = this.dataTracker.get(DRONE_YAW);
+                    this.setYaw(syncedYaw);
+                    this.setHeadYaw(syncedYaw);
+                    this.bodyYaw = syncedYaw;
+                    this.prevYaw = syncedYaw;
+                } else if (data.equals(DRONE_PITCH)) {
+                    float syncedPitch = this.dataTracker.get(DRONE_PITCH);
+                    this.setPitch(syncedPitch);
+                    this.prevPitch = syncedPitch;
+                }
             }
         }
+    }
+
+    // Improved rotation update method with better pitch clamping
+    public void updateRotationFromInput(float yaw, float pitch) {
+        // Clamp pitch to reasonable values for smooth movement
+        pitch = net.minecraft.util.math.MathHelper.clamp(pitch, -89.9f, 89.9f);
+
+        // Normalize yaw to prevent accumulation issues
+        yaw = net.minecraft.util.math.MathHelper.wrapDegrees(yaw);
+
+        // Set rotation values directly to avoid double-setting
+        this.setYaw(yaw);
+        this.setPitch(pitch);
+
+        // Update related rotation values
+        this.setHeadYaw(yaw);
+        this.bodyYaw = yaw;
+        this.prevYaw = yaw;
+        this.prevPitch = pitch;
+
+        // Update tracked data for client sync (only for other clients, not the controlling one)
+        if (!this.getWorld().isClient) {
+            this.dataTracker.set(DRONE_YAW, yaw);
+            this.dataTracker.set(DRONE_PITCH, pitch);
+        }
+    }
+
+    private boolean isLocallyControlled() {
+        boolean isLocallyControlled = false;
+
+        // You might need to import your client handler here
+        try {
+            // Check if we're controlling this specific drone
+            isLocallyControlled = net.sanfonic.hivemind.client.DroneClientHandler.isControllingDrone() &&
+                    DroneClientHandler.getControlledDrone() == this;
+        } catch (Exception e) {
+            // If client handler isn't available, assume not controlled
+            isLocallyControlled = false;
+        }
+        return isLocallyControlled;
     }
 
     @Override
@@ -554,69 +634,55 @@ public class DroneEntity extends PathAwareEntity {
 
     @Override
     public void tick() {
-        super.tick();
+        if (isBeingControlled()) {
+            // Store position before tick
+            double preX = this.getX();
+            double preY = this.getY();
+            double preZ = this.getZ();
+            float preYaw = this.getYaw();
+            float prePitch = this.getPitch();
 
-        // Handle visual effects on client side
-        if (this.getWorld().isClient) {
-            handleClientVisualEffects();
-            return;
-        }
+            super.tick();
 
-        if (this.getWorld().isClient && aiControlPaused) {
-            // Ensure all rotation values are synchronized
-            float currentYaw = this.getYaw();
-            float currentPitch = this.getPitch();
-
-            this.setHeadYaw(currentYaw);
-            this.bodyYaw = currentYaw;
-        }
-
-        // Server-side logic only below this point
-        // Only run AI Logic if not player controlled
-        if (!aiControlPaused) {
-            // Your existing AI Tick logic
-            runAITick();
-        }
-
-        if (this.hiveMindOwnerUuid != null) {
-            ModConfig config = ModConfig.getInstance();
-
-            // Only log if drone linking debug is enabled AND (owner changed OR enough time has passed)
-            if (config.isDroneLinkingDebugEnabled() &&
-                    (!Objects.equals(this.previousOwnerUuid, this.hiveMindOwnerUuid) ||
-                            (System.currentTimeMillis() - this.lastLogTime > config.getLogCooldownMillis()))) {
-
-                config.droneLinkDebugLog("Drone is linked to: " + this.hiveMindOwnerUuid);
-                this.previousOwnerUuid = this.hiveMindOwnerUuid;
-                this.lastLogTime = System.currentTimeMillis();
+            // Restore position if it changed unexpectedly (prevent camera jumps)
+            if (!this.getWorld().isClient && isBeingControlled()) {
+                // Only on server side, let client handle smooth movement
             }
-        }
 
-        // Role Specific tick behavior
-        if (this.roleBehavior != null) {
-            this.roleBehavior.tick(this);
-        }
-    }
+            // Handle visual effects on client side
+            if (this.getWorld().isClient) {
+                handleClientVisualEffects();
+                return;
+            }
 
-    // Add a method to force rotation update (call this from your control input handler)
-    public void updateRotationFromInput(float yaw, float pitch) {
-        //Clamp pitch to reasonable values
-        pitch = net.minecraft.util.math.MathHelper.clamp(pitch, -90.0f, 90.0f);
+            // Server-side logic only below this point
+            // Only run AI Logic if not player controlled
+            if (!aiControlPaused) {
+                // Your existing AI Tick logic
+                runAITick();
+            }
+            // When player controlled, don't interfere with rotation
 
-        // Set rotation on both client and server
-        this.setYaw(yaw);
-        this.setPitch(pitch);
+            if (this.hiveMindOwnerUuid != null) {
+                ModConfig config = ModConfig.getInstance();
 
-        // Force sync of all rotation values
-        this.setHeadYaw(yaw);
-        this.bodyYaw = yaw;
-        this.prevYaw = yaw;
-        this.prevPitch = pitch;
+                // Only log if drone linking debug is enabled AND (owner changed OR enough time has passed)
+                if (config.isDroneLinkingDebugEnabled() &&
+                        (!Objects.equals(this.previousOwnerUuid, this.hiveMindOwnerUuid) ||
+                                (System.currentTimeMillis() - this.lastLogTime > config.getLogCooldownMillis()))) {
 
-        // Update tracked data for client sync
-        if (!this.getWorld().isClient) {
-            this.dataTracker.set(DRONE_YAW, yaw);
-            this.dataTracker.set(DRONE_PITCH, pitch);
+                    config.droneLinkDebugLog("Drone is linked to: " + this.hiveMindOwnerUuid);
+                    this.previousOwnerUuid = this.hiveMindOwnerUuid;
+                    this.lastLogTime = System.currentTimeMillis();
+                }
+            }
+
+            // Role Specific tick behavior
+            if (this.roleBehavior != null) {
+                this.roleBehavior.tick(this);
+            }
+        } else {
+            super.tick();
         }
     }
 
@@ -729,5 +795,82 @@ public class DroneEntity extends PathAwareEntity {
                             .formatted(Formatting.GREEN));
         }
         return Text.literal("Drone").formatted(Formatting.GRAY);
+    }
+
+    // Override interpolation methods to prevent jittery movement
+    @Override
+    public double getLerpedPos(net.minecraft.util.math.Vec3d vec3d) {
+        // Use current position instead of interpolated for camera
+        if (isBeingControlled()) {
+            return this.getX();
+        }
+        return super.getLerpedPos(vec3d);
+    }
+
+    @Override
+    public float getLerpedYaw(float tickDelta) {
+        if (isBeingControlled()) {
+            // Return current yaw without interpolation for smoother camera
+            return this.getYaw();
+        }
+        return super.getLerpedYaw(tickDelta);
+    }
+
+    @Override
+    public float getLerpedPitch(float tickDelta) {
+        if (isBeingControlled) {
+            // Return current pitch without interpolation for smoother camera
+            return this.getPitch();
+        }
+        return super.getLerpedPitch(tickDelta);
+    }
+
+    // Improved rotation update method
+    public void updateRotationImmediate(float yaw, float pitch) {
+        // Clamp values
+        pitch = net.minecraft.util.math.MathHelper.clamp(pitch, -89.9f, 89.9f);
+        yaw = net.minecraft.util.math.MathHelper.wrapDegrees(yaw);
+
+        // Set rotation using proper methods
+        this.setYaw(yaw);
+        this.setPitch(pitch);
+        this.setHeadYaw(yaw);
+        this.setBodyYaw(yaw);
+
+        // Force previous values to current to prevent interpolation
+        try {
+            this.prevYaw = yaw;
+            this.prevPitch = pitch;
+            this.prevHeadYaw = yaw;
+            this.prevBodyYaw = yaw;
+        } catch (Exception e) {
+            // If directed access fails, force update through other means
+            this.refreshPositionAndAngles(this.getX(), this.getY(), this.getZ(), yaw, pitch);
+        }
+    }
+
+    // Method to check if this drone is currently being controlled
+    public boolean isBeingControlled() {
+        return this.controllingPlayer != null; // Assuming you have this field
+    }
+
+    // Override to prevent position desync when being controlled
+    @Override
+    public void updatePosition(double x, double y, double z) {
+        if (isBeingControlled()) {
+            // Update position more carefully to prevent camera jumps
+            double oldX = this.getX();
+            double oldY = this.getY();
+            double oldZ = this.getZ();
+
+            super.updatePosition(x, y, z);
+
+            // Force previous position to prevent interpolation artifacts
+            this.prevX = x;
+            this.prevY = y;
+            this.prevZ = z;
+        } else {
+            super.updatePosition(x, y, z);
+        }
     }
 }
