@@ -65,6 +65,20 @@ public class DroneEntity extends PathAwareEntity {
 
     private UUID hiveMindOwnerUuid;
 
+    private UUID controllingPlayerId = null;
+    public void setControllingPlayer(UUID playerId) {
+        this.controllingPlayerId = playerId;
+    }
+    public boolean isBeingControlled() {
+        return this.controllingPlayerId != null;
+    }
+    public UUID getControllingPlayerId() {
+        return this.controllingPlayerId;
+    }
+    public void clearControllingPlayer() {
+        this.controllingPlayerId = null;
+    }
+
     // Add these fields to prevent console spam
     private UUID previousOwnerUuid = null;
     private long lastLogTime = 0;
@@ -816,10 +830,6 @@ public class DroneEntity extends PathAwareEntity {
         // Clamp values
         pitch = net.minecraft.util.math.MathHelper.clamp(pitch, -89.9f, 89.9f);
         yaw = net.minecraft.util.math.MathHelper.wrapDegrees(yaw);
-
-        // Store old values
-        float oldYaw = this.getYaw();
-        float oldPitch = this.getPitch();
 
         // Set rotation using proper methods
         this.setYaw(yaw);
