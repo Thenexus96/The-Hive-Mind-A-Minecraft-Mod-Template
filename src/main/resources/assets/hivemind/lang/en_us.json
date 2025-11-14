@@ -16,6 +16,7 @@
 
   "item.hivemind.hive_material": "Hive Material",
   "item.hivemind.drone_spawn_egg": "Drone Spawn Egg",
+  "item.hivemind.hive_mind_access": "HiveMind Access",
 
   "block.hivemind.hive_material_block": "Hive Material (Block)",
   "block.hivemind.hive_core": "Hive Core",
@@ -25,5 +26,5 @@
   "advancement.hivemind.join.title": "Welcome to the HiveMind",
   "advancement.hivemind.join.description": "You are now linked with your Drones.",
 
-  "itemgoup.hivemind": "HiveMind Group"
+  "itemgroup.hivemind": "HiveMind"
 }

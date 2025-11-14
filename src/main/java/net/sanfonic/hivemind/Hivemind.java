@@ -16,6 +16,7 @@ import net.sanfonic.hivemind.client.DroneClientHandler;
 import net.sanfonic.hivemind.commands.DroneControlCommands;
 import net.sanfonic.hivemind.commands.HiveMindCommands;
 import net.sanfonic.hivemind.data.HiveMindData.HiveMindServerEvents;
+import net.sanfonic.hivemind.data.player.PlayerDataEvents;
 import net.sanfonic.hivemind.entity.DroneEntity;
 import net.sanfonic.hivemind.entity.ModEntities;
 import net.sanfonic.hivemind.item.ModItemGroups;
@@ -49,6 +50,7 @@ public class Hivemind implements ModInitializer {
 		HiveMindCommands.register();
 		DroneControlCommands.init();
 		HiveMindServerEvents.register();
+        PlayerDataEvents.register();
 
 		//Register attributes AFTER entities are registered
 		FabricDefaultAttributeRegistry.register(ModEntities.DRONE, DroneEntity.createMobAttributes());
