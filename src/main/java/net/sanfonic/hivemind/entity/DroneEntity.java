@@ -58,13 +58,10 @@ public class DroneEntity extends PathAwareEntity {
     public static TrackedData<Float> getDroneYawTracker() {
         return DRONE_YAW;
     }
-
     public static TrackedData<Float> getDronePitchTracker() {
         return DRONE_PITCH;
     }
-
     private UUID hiveMindOwnerUuid;
-
     private UUID controllingPlayerId = null;
     public void setControllingPlayer(UUID playerId) {
         this.controllingPlayerId = playerId;
@@ -146,8 +143,6 @@ public class DroneEntity extends PathAwareEntity {
             // Create new goal selectors to save current goals
             this.savedGoals = new GoalSelector(() -> this.getWorld().getProfiler());
             this.savedTargetGoals = new GoalSelector(() ->this.getWorld().getProfiler()); // Save current goals
-            this.savedGoals = new GoalSelector(() -> this.getWorld().getProfiler());
-            this.savedTargetGoals = new GoalSelector(() -> this.getWorld().getProfiler());
 
             // In Fabric, we need to use reflection or a different approach to copy goals
             // For now, we'll just clear the goals and rely on resumeAIControl to re-add them
@@ -175,20 +170,6 @@ public class DroneEntity extends PathAwareEntity {
             this.savedTargetGoals = null;
         }
     }
-
-    // Override this method to re-register your drone's AI goals
-    // This should contain the same goals you originally registered
-    //@Override
-    //protected void initGoals() {
-        // Example AI Goals - replace this with your actual drone AI
-        // this.goalSelector.add(1, new SwimGoal(this));
-        // this.goalSelector.add(2, new DronePatrolGoal(this));
-        // this.goalSelector.add(3, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
-        // this.goalSelector.add(4, new LookAroundGoal(this));
-
-        // this.targetSelector.add(1, new RevengeGoal(this));
-        // this.targetSelector.add(2, new ActiveTargetGoal<>(this, HostileEntity.class, true));
-    //}
 
     public boolean isAiControlPaused() {
         return aiControlPaused;
@@ -386,6 +367,7 @@ public class DroneEntity extends PathAwareEntity {
      * Apply the current role's behavior to this drone
      * This clears role specific goals and re-applies them
      */
+
     public void applyRoleBehavior() {
         // Clear all target selector (combat roles manage these)
         this.targetSelector.clear(goal -> {
@@ -655,34 +637,32 @@ public class DroneEntity extends PathAwareEntity {
                 return;
             }
 
-            // Server-side logic only below this point
-            // Only run AI Logic if not player controlled
-            if (!aiControlPaused) {
-                // Your existing AI Tick logic
-                runAITick();
-            }
-            // When player controlled, don't interfere with rotation
+            // Server-side logic only below
+            if (!this.getWorld().isClient) {
+                //Only run AI Logic if not player controlled
+                if (!aiControlPaused) {
+                    runAITick();
+                }
 
-            if (this.hiveMindOwnerUuid != null) {
-                ModConfig config = ModConfig.getInstance();
+                if (this.hiveMindOwnerUuid != null) {
+                    ModConfig config = ModConfig.getInstance();
 
-                // Only log if drone linking debug is enabled AND (owner changed OR enough time has passed)
-                if (config.isDroneLinkingDebugEnabled() &&
-                        (!Objects.equals(this.previousOwnerUuid, this.hiveMindOwnerUuid) ||
-                                (System.currentTimeMillis() - this.lastLogTime > config.getLogCooldownMillis()))) {
+                    // Only log if drone linking debug is enabled AND (owner changed OR enough time has passed)
+                    if (config.isDroneLinkingDebugEnabled() &&
+                            (!Objects.equals(this.previousOwnerUuid, this.hiveMindOwnerUuid) ||
+                                    (System.currentTimeMillis() - this.lastLogTime > config.getLogCooldownMillis()))) {
 
-                    config.droneLinkDebugLog("Drone is linked to: " + this.hiveMindOwnerUuid);
-                    this.previousOwnerUuid = this.hiveMindOwnerUuid;
-                    this.lastLogTime = System.currentTimeMillis();
+                        config.droneLinkDebugLog("Drone is linked to: " + this.hiveMindOwnerUuid);
+                        this.previousOwnerUuid = this.hiveMindOwnerUuid;
+                        this.lastLogTime = System.currentTimeMillis();
+                    }
+                }
+
+                // Role Specific tick behavior
+                if (this.roleBehavior != null) {
+                    this.roleBehavior.tick(this);
                 }
             }
-
-            // Role Specific tick behavior
-            if (this.roleBehavior != null) {
-                this.roleBehavior.tick(this);
-            }
-        } else {
-            super.tick();
         }
     }
 
@@ -797,34 +777,6 @@ public class DroneEntity extends PathAwareEntity {
         return Text.literal("Drone").formatted(Formatting.GRAY);
     }
 
-    // Override interpolation methods to prevent jittery movement
-    @Override
-    public double getLerpedPos(net.minecraft.util.math.Vec3d vec3d) {
-        // Use current position instead of interpolated for camera
-        if (isBeingControlled()) {
-            return this.getX();
-        }
-        return super.getLerpedPos(vec3d);
-    }
-
-    @Override
-    public float getLerpedYaw(float tickDelta) {
-        if (isBeingControlled()) {
-            // Return current yaw without interpolation for smoother camera
-            return this.getYaw();
-        }
-        return super.getLerpedYaw(tickDelta);
-    }
-
-    @Override
-    public float getLerpedPitch(float tickDelta) {
-        if (isBeingControlled) {
-            // Return current pitch without interpolation for smoother camera
-            return this.getPitch();
-        }
-        return super.getLerpedPitch(tickDelta);
-    }
-
     // Improved rotation update method
     public void updateRotationImmediate(float yaw, float pitch) {
         // Clamp values
@@ -847,11 +799,6 @@ public class DroneEntity extends PathAwareEntity {
             // If directed access fails, force update through other means
             this.refreshPositionAndAngles(this.getX(), this.getY(), this.getZ(), yaw, pitch);
         }
-    }
-
-    // Method to check if this drone is currently being controlled
-    public boolean isBeingControlled() {
-        return this.controllingPlayer != null; // Assuming you have this field
     }
 
     // Override to prevent position desync when being controlled
