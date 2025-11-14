@@ -10,6 +10,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
 import net.sanfonic.hivemind.Hivemind;
+import net.sanfonic.hivemind.block.ModBlock;
 
 public class ModItems {
     //RE-ENABLED: HiveMind Access Item
@@ -21,7 +22,6 @@ public class ModItems {
 
     private static void addItemsToIngredientItemGroup(FabricItemGroupEntries entries) {
         entries.add(HIVE_MATERIAL);
-        entries.add(HIVE_MIND_ACCESS);
     }
 
     public static Item registerItem(String name, Item item) {
@@ -31,7 +31,12 @@ public class ModItems {
     public static void registerModItems() {
         Hivemind.LOGGER.info("ModItems Registered for" + Hivemind.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
-                .register(ModItems::addItemsToIngredientItemGroup);
+        ItemGroupEvents.modifyEntriesEvent(ModItemGroups.HIVEMIND_GROUP_KEY).register(entries -> {
+            entries.add(HIVE_MIND_ACCESS);
+            entries.add(HIVE_MATERIAL);
+            entries.add(ModBlock.HIVE_MATERIAL_BLOCK);
+            entries.add(ModBlock.HIVE_CORE);
+            entries.add(Hivemind.DRONE_SPAWN_EGG);
+        });
     }
 }
