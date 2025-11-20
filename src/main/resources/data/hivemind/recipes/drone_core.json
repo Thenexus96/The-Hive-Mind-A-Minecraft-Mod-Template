@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "HMH",
+    "MRM",
+    "HMH"
+  ],
+  "key": {
+    "H": {
+      "item": "hivemind:hive_material"
+    },
+    "M": {
+      "item": "minecraft:iron_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "item": "hivemind:drone_core",
+    "count": 1
+  }
+}

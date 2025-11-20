@@ -1,36 +1,30 @@
 package net.sanfonic.hivemind.entity;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.*;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.*;
-import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
-//import net.minecraft.world.LocalDifficulty;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.util.math.Vec3d;
-
 import net.sanfonic.hivemind.client.DroneClientHandler;
-import net.sanfonic.hivemind.entity.custom.goal.FollowHiveMindPlayerGoal;
 import net.sanfonic.hivemind.config.ModConfig;
+import net.sanfonic.hivemind.data.HiveMindData.HiveCodeManager;
 import net.sanfonic.hivemind.data.HiveMindData.HiveMindDataManager;
+import net.sanfonic.hivemind.entity.custom.goal.FollowHiveMindPlayerGoal;
 import net.sanfonic.hivemind.entity.custom.role.DroneRole;
 import net.sanfonic.hivemind.entity.custom.role.DroneRoleBehavior;
 import net.sanfonic.hivemind.entity.custom.role.RoleRegistry;
@@ -53,6 +47,8 @@ public class DroneEntity extends PathAwareEntity {
             DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.FLOAT);
     private static final TrackedData<Float> DRONE_PITCH =
             DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.FLOAT);
+    private static final TrackedData<String> HIVE_CODE =
+            DataTracker.registerData(DroneEntity.class, TrackedDataHandlerRegistry.STRING);
 
     // Getters method for tracked data
     public static TrackedData<Float> getDroneYawTracker() {
@@ -63,6 +59,7 @@ public class DroneEntity extends PathAwareEntity {
     }
     private UUID hiveMindOwnerUuid;
     private UUID controllingPlayerId = null;
+    private String hiveCode = null;
     public void setControllingPlayer(UUID playerId) {
         this.controllingPlayerId = playerId;
     }
@@ -99,21 +96,47 @@ public class DroneEntity extends PathAwareEntity {
     }
 
     // Method to set the hivemind owner (called by the command)
-    public void setHiveMindOwnerUuid(PlayerEntity player) {
-        if (player == null) {
-            throw new IllegalArgumentException("Player cannot be null");
+    public void setHiveMindOwnerUuid(UUID ownerUUID) {
+        if (ownerUUID == null) {
+            throw new IllegalArgumentException("Owner UUID cannot be null");
         }
 
-        UUID playerUuid = player.getUuid();
-        if (playerUuid == null) {
-            throw new IllegalArgumentException("Player UUID cannot be null");
-        }
+        this.hiveMindOwnerUuid = ownerUUID;
 
-        // Check if the owner is actually changing before setting
-        if (!Objects.equals(this.hiveMindOwnerUuid, player.getUuid())) {
-            this.hiveMindOwnerUuid = player.getUuid();
-            updateTrackedData(player);
-            ModConfig.getInstance().droneLinkDebugLog("Drone linked to player: " + player.getName().getString());
+        if (!this.getWorld().isClient) {
+            MinecraftServer server = this.getWorld().getServer();
+            if (server != null) {
+                HiveMindDataManager dataManager = HiveMindDataManager.getInstance(server);
+                if (dataManager != null) {
+                    dataManager.linkDroneToOwner(this.getUuid(), ownerUUID);
+
+                    String dimensionKey = this.getWorld().getRegistryKey().getValue().toString();
+                    dataManager.updateDroneData(
+                            this.getUuid(),
+                            ownerUUID,
+                            this.getX(),
+                            this.getY(),
+                            this.getZ(),
+                            dimensionKey,
+                            this.getHealth(),
+                            this.getMaxHealth()
+                    );
+                }
+
+                // NEW: Generate and assign HiveCode
+                HiveCodeManager codeManager = HiveCodeManager.getInstance(server);
+                if (codeManager != null) {
+                    this.hiveCode = codeManager.generateHiveCode(this.getUuid(), ownerUUID);
+                    this.dataTracker.set(HIVE_CODE, this.hiveCode);
+                    ModConfig.getInstance().droneLinkDebugLog(
+                            "Assigned HiveCode " + this.hiveCode + " to drone"
+                    );
+                }
+            }
+
+            // Update tracked data after linking
+            PlayerEntity owner = this.getWorld().getPlayerByUuid(ownerUUID);
+            updateTrackedData(owner);
         }
     }
 
@@ -238,47 +261,16 @@ public class DroneEntity extends PathAwareEntity {
                     this.getMaxHealth()
             );
 
-            // Optional: Add any additional restoration logic here
-            // For example, setting AI goals, behaviors, etc.
-        }
-    }
-
-    /**
-     * Sets the HiveMind owner and saves to persistent data
-     * Calls this when initially linking a drone to an owner
-     */
-    public void setHiveMindOwner(UUID ownerUUID) {
-        if (ownerUUID == null) {
-            throw new IllegalArgumentException("Owner UUID cannot be null");
-        }
-
-        this.hiveMindOwnerUuid = ownerUUID;
-
-        if (!this.getWorld().isClient) {
-            MinecraftServer server = this.getWorld().getServer();
-            if (server != null) {
-                HiveMindDataManager dataManager = HiveMindDataManager.getInstance(server);
-                if (dataManager != null) {
-                    dataManager.linkDroneToOwner(this.getUuid(), ownerUUID);
-
-                    // Also update the drone's current data
-                    String dimensionKey = this.getWorld().getRegistryKey().getValue().toString();
-                    dataManager.updateDroneData(
-                            this.getUuid(),
-                            ownerUUID,
-                            this.getX(),
-                            this.getY(),
-                            this.getZ(),
-                            dimensionKey,
-                            this.getHealth(),
-                            this.getMaxHealth()
-                    );
+            // NEW: Restore HiveCode
+            HiveCodeManager codeManager = HiveCodeManager.getInstance(server);
+            if (codeManager != null) {
+                this.hiveCode = codeManager.getHiveCode(this.getUuid());
+                if (this.hiveCode != null) {
+                    this.dataTracker.set(HIVE_CODE, this.hiveCode);
                 }
             }
-
-            // Update tracked data for visual effect
-            PlayerEntity owner = this.getWorld().getPlayerByUuid(ownerUUID);
-            updateTrackedData(owner);
+            // Optional: Add any additional restoration logic here
+            // For example, setting AI goals, behaviors, etc.
         }
     }
 
@@ -298,11 +290,19 @@ public class DroneEntity extends PathAwareEntity {
                 if (dataManager != null) {
                     dataManager.unlinkDrone(this.getUuid());
                 }
+
+                // NEW: Remove HiveCode
+                HiveCodeManager codeManager = HiveCodeManager.getInstance(server);
+                if (codeManager != null) {
+                    codeManager.removeHiveCode(this.getUuid());
+                }
             }
         }
 
         this.hiveMindOwnerUuid = null;
-        updateTrackedData(null); // Clear visual indicators
+        this.hiveCode = null;
+        this.dataTracker.set(HIVE_CODE, "");
+        updateTrackedData(null);
     }
 
     // Validates a UUID to ensure it's not null and properly formatted
@@ -436,7 +436,62 @@ public class DroneEntity extends PathAwareEntity {
         this.dataTracker.startTracking(OWNER_NAME, "");
         this.dataTracker.startTracking(DRONE_YAW, 0.0f);
         this.dataTracker.startTracking(DRONE_PITCH, 0.0f);
+        this.dataTracker.startTracking(HIVE_CODE, ""); // NEW
         // No additional data to track
+    }
+
+    // Add getter method for HiveCode:
+    public String getHiveCode() {
+        if (this.getWorld().isClient) {
+            // Client side: get from tracked data
+            return this.dataTracker.get(HIVE_CODE);
+        }
+        // Server side: setHiveMindOwner to generate HiveCode:
+        return this.hiveCode != null ? this.hiveCode : "";
+    }
+
+    // Modify setHiveMindOwner to generate HiveCode:
+    public void setHiveMindOwner(UUID ownerUUID) {
+        if (ownerUUID == null) {
+            throw new IllegalArgumentException("Owner UUID cannot be null");
+        }
+        this.hiveMindOwnerUuid = ownerUUID;
+
+        if (!this.getWorld().isClient) {
+            MinecraftServer server = this.getWorld().getServer();
+            if (server != null) {
+                HiveMindDataManager dataManager = HiveMindDataManager.getInstance(server);
+                if (dataManager != null) {
+                    dataManager.linkDroneToOwner(this.getUuid(), ownerUUID);
+
+                    String dimensionKey = this.getWorld().getRegistryKey().getValue().toTranslationKey();
+                    dataManager.updateDroneData(
+                            this.getUuid(),
+                            ownerUUID,
+                            this.getX(),
+                            this.getY(),
+                            this.getZ(),
+                            dimensionKey,
+                            this.getHealth(),
+                            this.getMaxHealth()
+                    );
+                }
+
+                //New: Generate and assign HiveCode
+                HiveCodeManager codeManager = HiveCodeManager.getInstance(server);
+                if (codeManager != null) {
+                    this.hiveCode = codeManager.generateHiveCode(this.getUuid(), ownerUUID);
+                    this.dataTracker.set(HIVE_CODE, this.hiveCode);
+                    ModConfig.getInstance().droneLinkDebugLog(
+                            "Assigned HiveCode " + this.hiveCode + " to drone"
+                    );
+                }
+            }
+
+            // Update tracked data after linking
+            PlayerEntity owner = this.getWorld().getPlayerByUuid(ownerUUID);
+            updateTrackedData(owner);
+        }
     }
 
     // Override setYaw to sync to clients
@@ -562,9 +617,14 @@ public class DroneEntity extends PathAwareEntity {
                 ownerInfo = "No Owner";
             }
 
-            Text message = Text.literal("Drone - Health: " + (int) this.getHealth() + "/" + (int) this.getMaxHealth())
+            String hiveCode = getHiveCode();
+            String codeInfo = (hiveCode != null && !hiveCode.isEmpty()) ? "Code: " + hiveCode + " | " : "";
+
+            Text message = Text.literal(codeInfo + "Health: " + (int) this
+                            .getHealth() + "/" + (int) this.getMaxHealth())
                     .formatted(Formatting.AQUA)
-                    .append(Text.literal(" | Role: " + this.currentRole.getDisplayName()).formatted(Formatting.YELLOW))
+                    .append(Text.literal(" | Role: " + this
+                            .currentRole.getDisplayName()).formatted(Formatting.YELLOW))
                     .append(Text.literal(" | " + ownerInfo).formatted(
                             hasHiveMindOwner() ? Formatting.GREEN : Formatting.GRAY));
             player.sendMessage(message, false);
@@ -590,6 +650,11 @@ public class DroneEntity extends PathAwareEntity {
         }
         // Save Role
         nbt.putString("DroneRole", this.currentRole.getId());
+
+        // New: Save HiveCode
+        if (this.hiveCode != null) {
+            nbt.putString("HiveCode", this.hiveCode);
+        }
     }
 
     @Override
@@ -611,6 +676,12 @@ public class DroneEntity extends PathAwareEntity {
             String roleId = nbt.getString("DroneRole");
             DroneRole loadedRole = DroneRole.fromId(roleId);
             setRole(loadedRole);
+        }
+
+        // NEW: Load HiveCode
+        if (nbt.contains("HiveCode")) {
+            this.hiveCode = nbt.getString("HiveCode");
+            this.dataTracker.set(HIVE_CODE, this.hiveCode);
         }
     }
 
@@ -768,13 +839,27 @@ public class DroneEntity extends PathAwareEntity {
     // Returns the custom name for display, showing owner if linked
     @Override
     public Text getDisplayName() {
-        if (hasHiveMindOwner() && !getOwnerNameForDisplay().isEmpty()) {
-            return Text.literal("Drone")
-                    .formatted(Formatting.AQUA)
-                    .append(Text.literal(" [" + getOwnerNameForDisplay() + "]")
-                            .formatted(Formatting.GREEN));
+        String code = getHiveCode();
+
+        if (hasHiveMindOwner() && !code.isEmpty()) {
+            return Text.literal(code)
+                    .formatted(Formatting.GOLD, Formatting.BOLD)
+                    .append(Text.literal(" | ").formatted(Formatting.DARK_GRAY))
+                    .append(Text.literal(getOwnerNameForDisplay()).formatted(Formatting.GREEN));
+        } else if (!code.isEmpty()) {
+            return Text.literal(code).formatted(Formatting.GRAY);
         }
         return Text.literal("Drone").formatted(Formatting.GRAY);
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return true;
+    }
+
+    @Override
+    public boolean isCustomNameVisible() {
+        return true;
     }
 
     // Improved rotation update method
