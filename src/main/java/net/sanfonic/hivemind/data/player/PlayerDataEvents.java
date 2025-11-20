@@ -10,18 +10,30 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class PlayerDataEvents {
 
     public static void register() {
+        System.out.println("[HiveMind] Registering PlayerDataEvents...");
+
         // Load data when player joins
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
-            System.out.println("[HiveMind] === Player Join Event ===");
+            System.out.println("[HiveMind] === Player Join Event for: " + player.getName().getString() + " ===");
             PlayerHiveComponent.onPlayerJoin(player);
+
+            // Debug: Check if player has access after loading
+            boolean hasAccess = PlayerHiveComponent.hasAccess(player);
+            System.out.println("[HiveMind] === Player " + player.getName().getString() + " has access: " + hasAccess);
         });
 
 
         // Save data when player disconnects
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
-            System.out.println("[HiveMind] === Player Disconnect Event ===");
+            System.out.println("[HiveMind] === Player Disconnect Event for: " + player.getName().getString() + " ===");
+            PlayerHiveComponent.onPlayerLeave(player);
+
+            // Debug: Check player's data before saving
+            boolean hasAccess = PlayerHiveComponent.hasAccess(player);
+            System.out.println("[HiveMind] Saving data for " + player.getName().getString() + " (has access: " + hasAccess + ")");
+
             PlayerHiveComponent.onPlayerLeave(player);
         });
 
